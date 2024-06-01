@@ -52,21 +52,21 @@ async function run() {
       }
     });
 
-    app.post("/cart", async (req, res) => {
-      const item = req.body;
-      try {
-        const result = await cartCollection.insertOne(item);
-        if (!result || !result.ops || result.ops.length === 0) {
-          throw new Error("Failed to add item to cart");
-        }
-        res.status(201).send(result.ops[0]); // Sending back the inserted document
-      } catch (error) {
-        console.error(error);
-        res.status(500).send("Internal server error");
-      }
-    });
+    // app.post("/cart", async (req, res) => {
+    //   const item = req.body;
+    //   try {
+    //     const result = await cartCollection.insertOne(item);
+    //     if (!result || !result.ops || result.ops.length === 0) {
+    //       throw new Error("Failed to add item to cart");
+    //     }
+    //     res.status(201).send(result.ops[0]); // Sending back the inserted document
+    //   } catch (error) {
+    //     console.error(error);
+    //     res.status(500).send("Internal server error");
+    //   }
+    // });
     app.get("/carts", async (req, res) => {
-      const result = await cartCollectionCollection.find().toArray();
+      const result = await cartCollection.find().toArray();
       res.send(result);
     });
 
@@ -97,10 +97,34 @@ async function run() {
     //   res.send(result);
     // });
 
+    // app.post("/carts", async (req, res) => {
+    //   const item = req.body;
+
+    //   const result = await cartCollection.insertOne(item);
+    //   res.send(result);
+    // });
     app.post("/carts", async (req, res) => {
       const item = req.body;
-      const result = await cartCollection.insertOne(item);
-      res.send(result);
+      console.log(item);
+      try {
+        // Check if the item already exists in the cart
+        const existingItem = await cartCollection.findOne({
+          clothesId: item.clothesId,
+        });
+        console.log(existingItem);
+        if (existingItem) {
+          return res
+            .status(400)
+            .send({ error: true, message: "Item already in cart" });
+        }
+
+        // If item doesn't exist, add it to the cart
+        const result = await cartCollection.insertOne(item);
+        res.status(201).send({ success: true, message: "Item added to cart" });
+      } catch (error) {
+        console.error(error);
+        res.status(500).send("Internal server error");
+      }
     });
     app.delete("/carts/:id", async (req, res) => {
       const id = req.params.id;
