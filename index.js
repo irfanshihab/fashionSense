@@ -1,11 +1,11 @@
 const express = require("express");
 const cors = require("cors");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = 5000;
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
 const uri =
   "mongodb+srv://fashionSense:FNkdfiQbjJMmquE1@cluster0.psezczp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 // fashionSense
@@ -23,30 +23,59 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    const fashionCollection = client.db("fashionSenseDB").collection("lists");
+    // const fashionsCollection = client
+    //   .db("fashionSenseDB")
+    //   .collection("clothes");
+    const fashionsCollection = client
+      .db("fashionSenseDB")
+      .collection("clothesitem");
+    const cartCollection = client.db("fashionSenseDB").collection("carts");
 
-    app.get("/lists", async (req, res) => {
-      const result = await fashionCollection.find().toArray();
+    app.get("/clothes", async (req, res) => {
+      const result = await fashionsCollection.find().toArray();
       res.send(result);
     });
-    // app.get("/services/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: new ObjectId(id) };
 
-    //   const options = {
-    //     // Include only the `title` and `imdb` fields in the returned document
-    //     projection: { title: 1, price: 1, service_id: 1, img: 1 },
-    //   };
+    app.get("/clothes/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        console.log(id);
+        const query = { _id: id }; // Use string ID directly
+        const result = await fashionsCollection.findOne(query);
+        if (!result) {
+          return res.status(404).send("Product not found");
+        }
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send("Internal server error");
+      }
+    });
 
-    //   const result = await serviceCollection.findOne(query, options);
-    //   res.send(result);
-    // });
-    // app.delete("/bookings/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: new ObjectId(id) };
-    //   const result = await bookingCollection.deleteOne(query);
-    //   res.send(result);
-    // });
+    app.post("/cart", async (req, res) => {
+      const item = req.body;
+      try {
+        const result = await cartCollection.insertOne(item);
+        if (!result || !result.ops || result.ops.length === 0) {
+          throw new Error("Failed to add item to cart");
+        }
+        res.status(201).send(result.ops[0]); // Sending back the inserted document
+      } catch (error) {
+        console.error(error);
+        res.status(500).send("Internal server error");
+      }
+    });
+    app.get("/carts", async (req, res) => {
+      const result = await cartCollectionCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.delete("/clothes/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: id };
+      const result = await fashionsCollection.deleteOne(query);
+      res.send(result);
+    });
 
     // cart collection apis
     // app.get("/carts", verifyJWT, async (req, res) => {
@@ -68,11 +97,17 @@ async function run() {
     //   res.send(result);
     // });
 
-    // app.post("/carts", async (req, res) => {
-    //   const item = req.body;
-    //   const result = await cartCollection.insertOne(item);
-    //   res.send(result);
-    // });
+    app.post("/carts", async (req, res) => {
+      const item = req.body;
+      const result = await cartCollection.insertOne(item);
+      res.send(result);
+    });
+    app.delete("/carts/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await fashionsCollection.deleteOne(query);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
