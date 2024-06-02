@@ -126,10 +126,26 @@ async function run() {
         res.status(500).send("Internal server error");
       }
     });
+    app.get("/carts/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        console.log(id);
+        const query = { _id: new ObjectId(id) }; // Use string ID directly
+        const result = await cartCollection.findOne(query);
+        if (!result) {
+          return res.status(404).send("Product not found");
+        }
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send("Internal server error");
+      }
+    });
     app.delete("/carts/:id", async (req, res) => {
       const id = req.params.id;
+      console.log(id);
       const query = { _id: new ObjectId(id) };
-      const result = await fashionsCollection.deleteOne(query);
+      const result = await cartCollection.deleteOne(query);
       res.send(result);
     });
 
