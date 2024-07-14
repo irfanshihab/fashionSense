@@ -40,6 +40,8 @@ async function run() {
       try {
         const id = req.params.id;
         console.log(id);
+        // const query =
+
         const query = { _id: id }; // Use string ID directly
         const result = await fashionsCollection.findOne(query);
         if (!result) {
